@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Random string list</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 20px;
+    }
+
+    div {
+      float: left;
+      padding: 20px;
+      background: whitesmoke;
+      margin: 10px;
+    }
+
+    li {
+      padding: 3px;
+    }
+
+    #randomized {
+      background: yellow;
+    }
+  </style>
+</head>
+
+<body>
+  <div>
+    <h2>random list</h2>
+  </div>
+  <div>
+    <h4>Items</h4>
+    <form id="items-form">
+      <input type="button" id="add-item" value="Add item"></input>
+      <ul id="items-inputs"></ul>
+    </form>
+  </div>
+
+  <div id="randomized">
+    <h4>Randomized</h4>
+    <input type="button" id="randomize" value="Randomize!">
+    <ul id="randomized-items"></ul>
+  </div>
+</body>
+
+<script>
+  function querySelectorAll(selector) {
+    return [].slice.call(document.querySelectorAll(selector));
+  }
+
+  function getInitialItems() {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    const itemsFromURL = [];
+    for (const value of urlParams.values()) { 
+      if (value === "") continue;
+      itemsFromURL.push(value);
+    }
+
+    const defaultItems = [
+      "Item1",
+      "Item2",
+      "Item3",
+      ""
+    ];
+
+    return itemsFromURL.length > 0 ? itemsFromURL : defaultItems;
+  }
+
+  const items = getInitialItems();
+
+  function updateURL() {
+    history.replaceState(null, '', window.location.pathname);
+
+    const searchParams = new URLSearchParams(window.location.search);
+    items.forEach((x,i) => {
+      searchParams.set(`item${i}`, x);
+    });
+
+    const newRelativePathQuery = window.location.pathname + '?' + searchParams.toString();
+    history.replaceState(null, '', newRelativePathQuery);
+  }
+
+  function sync() {
+    document.querySelector("#items-inputs").innerHTML = items.map((text, i) => `
+      <li class="item-input">
+          <input type="text" class="item-input-value" value="${text}" index="${i}">
+          <input type="button" class="item-input-remove" value="-" index="${i}">
+      </li>
+    `).join("");
+
+    querySelectorAll(".item-input-remove").forEach(x => {
+      const index = x.getAttribute("index");
+      x.addEventListener("click", () => {
+        items.splice(index, 1);
+        sync();
+      });
+    });
+
+    querySelectorAll(".item-input-value").forEach(x => {
+      const index = x.getAttribute("index");
+      x.addEventListener("blur", (e) => {
+        items[index] = e.currentTarget.value;
+        sync();
+      });
+    });
+
+    updateURL();
+  }
+
+  sync();
+
+  document.querySelector("#add-item").addEventListener("click", x => {
+    items.push("");
+    sync();
+  });
+
+  document.querySelector("#randomize").addEventListener("click", e => {
+    e.preventDefault();
+    randomize();
+  })
+
+  function randomize() {
+    const finalItems = items.filter(x => x !== "");
+
+    const itemsElem = document.getElementById("randomized-items");
+    itemsElem.innerHTML = "";
+
+    for (let i = 0, l = finalItems.length; i < l; i++) {
+      const index = Math.floor(Math.random() * finalItems.length);
+
+      const [item] = finalItems.splice(index, 1);
+
+      const elem = document.createElement("li");
+      elem.innerHTML = item;
+
+      itemsElem.appendChild(elem);
+    }
+  }
+
+  randomize();
+</script>
+
+</html>
